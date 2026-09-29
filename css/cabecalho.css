@@ -1,0 +1,68 @@
+/* ── HEADER ── */
+header {
+    position: fixed;
+    width: 100vw;
+    z-index: 1000;
+    background: var(--color-background);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 3rem;
+}
+header.active { box-shadow: var(--box-shadow); }
+
+/* ── LOGO ── */
+header .logo {
+    display: flex;
+    gap: .8rem;
+    align-items: center;
+    margin-right: auto;
+}
+header .logo span { font-size: 2rem; color: var(--color-primary); }
+header .logo h2   { font-size: 1.4rem; }
+
+/* ── NAVBAR ── */
+header .navbar { display:flex; align-items:center; }
+header .navbar a {
+    display: flex;
+    margin-left: 2rem;
+    gap: 1rem;
+    align-items: center;
+    position: relative;
+    height: 3.7rem;
+    transition: all 300ms ease;
+    padding: 0 2rem;
+    color: var(--color-info);
+}
+header .navbar a:hover { padding-top: 1.5rem; }
+header .navbar a.active { background: var(--color-light); color: var(--color-primary); }
+header .navbar a.active::before {
+    content: "";
+    background: var(--color-primary);
+    position: absolute;
+    height: 5px; width: 100%;
+    left: 0; top: 0;
+}
+header .navbar a span, header .navbar a h3 { color: inherit; }
+
+/* ── THEME TOGGLER ── */
+header .theme-toggler {
+    background: var(--color-light);
+    display: flex;
+    align-items: center;
+    height: 1.6rem;
+    width: 4.2rem;
+    cursor: pointer;
+    border-radius: var(--border-radius-1);
+    margin-left: 2rem;
+}
+header .theme-toggler span {
+    font-size: 1.2rem;
+    width: 50%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+}
+header .theme-toggler span.active {
+    background: var(--color-primary);
+    color: white;
+    border-radius: var(--border-radius-1);
+}

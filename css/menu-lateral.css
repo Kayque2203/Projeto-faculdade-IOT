@@ -1,0 +1,55 @@
+/* ── ASIDE / SIDEBAR ── */
+aside { position: sticky; top: 5rem; height: fit-content; }
+
+aside .sidebar-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.2rem var(--card-padding);
+    background: var(--color-white);
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--box-shadow);
+    margin-bottom: 1rem;
+}
+aside .sidebar-info .sidebar-icon span {
+    font-size: 2.5rem;
+    color: var(--color-primary);
+}
+
+aside .resumo, aside .poluentes-lista {
+    background: var(--color-white);
+    padding: var(--card-padding);
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--box-shadow);
+    margin-bottom: 1rem;
+}
+aside .resumo h5, aside .poluentes-lista h5 {
+    color: var(--color-info);
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: .05rem;
+}
+aside .resumo-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: .5rem 0;
+    border-bottom: 1px solid var(--color-light);
+}
+aside .resumo-item:last-child { border: none; }
+aside .resumo-item span { font-size: 1.4rem; }
+aside .resumo-item small { display: block; }
+aside .resumo-item p { font-weight: 600; color: var(--color-dark); margin: 0; }
+
+/* ── TAGS DE SENSORES PLANEJADOS ── */
+.sensor-tag {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .4rem 0;
+    border-bottom: 1px solid var(--color-light);
+    font-size: .8rem;
+    gap: .5rem;
+}
+.sensor-tag:last-child { border: none; }
+.sensor-tag b { color: var(--color-primary); text-align: right; }

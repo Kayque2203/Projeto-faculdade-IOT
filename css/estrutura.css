@@ -1,0 +1,9 @@
+/* ── LAYOUT PRINCIPAL ── */
+.container {
+    display: grid;
+    width: 96%;
+    margin: 0 auto;
+    gap: 1.8rem;
+    grid-template-columns: 16rem auto 22rem;
+    padding-top: 5rem;
+}

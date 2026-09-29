@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoramento Ambiental de Sala de Aula</title>
+    <link rel="shortcut icon" href="./images/logo.png">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+
+    <link rel="stylesheet" href="css/variaveis.css">
+    <link rel="stylesheet" href="css/estrutura.css">
+    <link rel="stylesheet" href="css/cabecalho.css">
+    <link rel="stylesheet" href="css/menu-lateral.css">
+    <link rel="stylesheet" href="css/cartoes.css">
+    <link rel="stylesheet" href="css/tabelas.css">
+    <link rel="stylesheet" href="css/painel-direito.css">
+    <link rel="stylesheet" href="css/responsivo.css">
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <span class="material-icons-sharp">sensors</span>
+            <h2>Sala<span class="danger">Monitor</span></h2>
+        </div>
+
+        <div class="navbar">
+            <a href="#dashboard" class="active">
+                <span class="material-icons-sharp">dashboard</span>
+                <h3>Dashboard</h3>
+            </a>
+            <a href="#monitoramento">
+                <span class="material-icons-sharp">show_chart</span>
+                <h3>Monitoramento</h3>
+            </a>
+            <a href="#historico">
+                <span class="material-icons-sharp">history</span>
+                <h3>Histórico</h3>
+            </a>
+            <a href="#alertas">
+                <span class="material-icons-sharp">notifications</span>
+                <h3>Alertas</h3>
+            </a>
+        </div>
+
+        <div class="theme-toggler">
+            <span class="material-icons-sharp active">light_mode</span>
+            <span class="material-icons-sharp">dark_mode</span>
+        </div>
+    </header>
+
+    <div class="container">
+
+        <!-- MENU LATERAL -->
+        <aside>
+            <div class="sidebar-info">
+                <div class="sidebar-icon">
+                    <span class="material-icons-sharp">meeting_room</span>
+                </div>
+                <div class="info">
+                    <p><b>Sistema de</b></p>
+                    <small class="text-muted">Monitoramento Ambiental</small>
+                </div>
+            </div>
+
+            <div class="resumo">
+                <h5>Resumo do Sistema</h5>
+
+                <div class="resumo-item">
+                    <span class="material-icons-sharp primary">insights</span>
+                    <div>
+                        <small class="text-muted">Status Atual</small>
+                        <p id="side-status">-</p>
+                    </div>
+                </div>
+
+                <div class="resumo-item">
+                    <span class="material-icons-sharp success">update</span>
+                    <div>
+                        <small class="text-muted">Última Atualização</small>
+                        <p id="side-atualizacao">-</p>
+                    </div>
+                </div>
+
+                <div class="resumo-item">
+                    <span class="material-icons-sharp danger">notifications_active</span>
+                    <div>
+                        <small class="text-muted">Alertas Registrados</small>
+                        <p id="side-alertas">-</p>
+                    </div>
+                </div>
+
+                <div class="resumo-item">
+                    <span class="material-icons-sharp warning">history</span>
+                    <div>
+                        <small class="text-muted">Registros no Histórico</small>
+                        <p id="side-registros">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="poluentes-lista">
+                <h5>Sensores Planejados (ESP32)</h5>
+                <div id="lista-sensores-planejados"></div>
+            </div>
+        </aside>
+
+        <!-- CONTEÚDO PRINCIPAL -->
+        <main>
+
+            <section id="dashboard">
+                <h1>Dashboard</h1>
+
+                <div class="status-geral" id="status-geral"></div>
+
+                <div class="cards-metricas" id="cards-metricas"></div>
+            </section>
+
+            <section id="monitoramento" style="margin-top: 2rem;">
+                <h1>Monitoramento</h1>
+                <div class="grid-graficos">
+                    <div class="card-box">
+                        <h3>Temperatura ao Longo do Tempo</h3>
+                        <canvas id="grafico-temperatura" height="200"></canvas>
+                    </div>
+                    <div class="card-box">
+                        <h3>Qualidade do Ar ao Longo do Tempo</h3>
+                        <canvas id="grafico-qualidade-ar" height="200"></canvas>
+                    </div>
+                    <div class="card-box">
+                        <h3>Ruído ao Longo do Tempo</h3>
+                        <canvas id="grafico-ruido" height="200"></canvas>
+                    </div>
+                    <div class="card-box">
+                        <h3>Iluminação ao Longo do Tempo</h3>
+                        <canvas id="grafico-iluminacao" height="200"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <section id="historico" style="margin-top: 2rem;">
+                <h1>Histórico de Medições</h1>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Horário</th>
+                            <th>Temperatura</th>
+                            <th>Qualidade do Ar</th>
+                            <th>Iluminação</th>
+                            <th>Ruído</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-historico"></tbody>
+                </table>
+            </section>
+
+            <section id="alertas" style="margin-top: 2rem;">
+                <h1>Alertas</h1>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Mensagem</th>
+                            <th>Data / Hora</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-alertas"></tbody>
+                </table>
+            </section>
+
+        </main>
+
+        <!-- PAINEL DIREITO -->
+        <div class="right">
+
+            <div class="right-section">
+                <h2>Últimos Registros</h2>
+                <div class="updates" id="ultimos-registros"></div>
+            </div>
+
+            <div class="right-section" style="margin-top: 2rem;">
+                <h2>Limites Configurados</h2>
+                <div class="updates" id="lista-limites"></div>
+            </div>
+
+            <div class="right-section" style="margin-top: 2rem;">
+                <h2>Sobre o Sistema</h2>
+                <div class="updates">
+                    <div class="update-item" style="border:none">
+                        <small>
+                            Este dashboard representa a interface de um sistema de monitoramento
+                            ambiental de sala de aula. Nesta etapa os dados são <b>simulados em
+                            JavaScript</b>; futuramente serão substituídos por leituras reais de
+                            um <b>ESP32</b> com os sensores planejados, sem necessidade de
+                            reconstruir a interface.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    
+    <script src="js/auxiliares.js"></script>
+    <script src="js/dados-simulados.js"></script>
+    <script src="js/menu-lateral.js"></script>
+    <script src="js/cartoes.js"></script>
+    <script src="js/tabelas.js"></script>
+    <script src="js/painel-direito.js"></script>
+    <script src="js/grafico.js"></script>
+    <script src="js/tema.js"></script>
+    <script src="js/principal.js"></script>
+</body>
+</html>

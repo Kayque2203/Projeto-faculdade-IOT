@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* ── VARIÁVEIS GLOBAIS E TEMA ── */
+:root {
+    --color-primary: #2E8B57;
+    --color-danger:  #ff7782;
+    --color-success: #41f1b6;
+    --color-warning: #ffbb55;
+    --color-white:   #fff;
+    --color-info:    #7d8da1;
+    --color-dark:    #363949;
+    --color-light:   rgba(132,139,200,0.18);
+    --color-dark-varient: #677483;
+    --color-background: #f6f6f9;
+    --card-border-radius: 2rem;
+    --border-radius-1: 0.4rem;
+    --border-radius-2: 1.2rem;
+    --card-padding: 1.8rem;
+    --box-shadow: 0 2rem 3rem var(--color-light);
+}
+
+.dark-theme {
+    --color-background: #181a1e;
+    --color-white:      #202528;
+    --color-dark:       #edeffd;
+    --color-dark-varient: #a3bdcc;
+    --color-light:      rgba(0,0,0,0.4);
+    --box-shadow:       0 2rem 3rem var(--color-light);
+}
+
+/* ── RESET E TIPOGRAFIA BASE ── */
+* { margin:0; padding:0; text-decoration:none; list-style:none; box-sizing:border-box; color: var(--color-dark); }
+html { font-size:14px; scroll-behavior:smooth; }
+body { font-family:'Poppins',sans-serif; font-size:.88rem; background:var(--color-background); overflow-x:hidden; }
+h1 { font-weight:800; font-size:1.8rem; }
+h2 { font-size:1.4rem; }
+h3 { font-size:.87rem; }
+h5 { font-size:.77rem; }
+small { font-size:.75rem; }
+p { color: var(--color-dark-varient); }
+b { color: var(--color-dark); }
+
+/* ── UTILITÁRIOS DE COR ── */
+.text-muted { color: var(--color-info); }
+.primary    { color: var(--color-primary); }
+.danger     { color: var(--color-danger); }
+.success    { color: var(--color-success); }
+.warning    { color: var(--color-warning); }
