@@ -1,24 +1,30 @@
-// controla o tema claro/escuro e o destaque da navbar ao rolar a página
-// (âncoras atualizadas para as seções do novo dashboard: #dashboard,
-// #monitoramento, #historico, #alertas)
+// controla o tema claro/escuro e o destaque da navegação ao rolar a página
 
 function ativarNavbar() {
     const links = document.querySelectorAll("header .navbar a")
-    window.addEventListener("scroll", () => {
+
+    function atualizarDestaque() {
         document.querySelector("header").classList.toggle("active", window.scrollY > 0)
         links.forEach(link => {
             const secao = document.querySelector(link.getAttribute("href"))
             if (!secao) return
             const posicao = secao.getBoundingClientRect()
-            link.classList.toggle("active", posicao.top <= 100 && posicao.bottom >= 100)
+            const ativo = posicao.top <= 120 && posicao.bottom >= 120
+            link.classList.toggle("active", ativo)
+            if (ativo) link.setAttribute("aria-current", "true")
+            else link.removeAttribute("aria-current")
         })
-    })
+    }
+
+    window.addEventListener("scroll", atualizarDestaque, { passive: true })
 }
 
 function ativarAlternarTema() {
-    const botao = document.querySelector(".theme-toggler")
+    const botao = document.getElementById("botao-tema")
     botao.addEventListener("click", () => {
-        document.body.classList.toggle("dark-theme")
-        botao.querySelectorAll("span").forEach(icone => icone.classList.toggle("active"))
+        const escuro = document.body.classList.toggle("dark-theme")
+        botao.setAttribute("aria-pressed", String(escuro))
+        botao.setAttribute("aria-label", escuro ? "Usar tema claro" : "Usar tema escuro")
+        desenharTodosGraficos()   // os gráficos usam as cores do tema
     })
 }

@@ -1,0 +1,58 @@
+/* ── SOBRE ── */
+.sobre-grade { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+
+.sobre-texto {
+    padding: 1.6rem 1.7rem;
+    background: var(--color-white);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--box-shadow);
+}
+.sobre-texto p { color: var(--color-dark-varient); margin-bottom: 1rem; }
+.sobre-texto p:last-child { margin-bottom: 0; }
+.sobre-texto .aviso {
+    padding: .9rem 1.1rem;
+    border-left: 5px solid var(--color-primary);
+    border-radius: .5rem;
+    background: var(--color-light);
+    color: var(--color-dark);
+    font-weight: 500;
+}
+
+.sobre-blocos { display: grid; gap: .8rem; }
+.bloco {
+    background: var(--color-white);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--box-shadow);
+    overflow: hidden;
+}
+.bloco summary {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1.3rem;
+    min-height: 3rem;
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+}
+.bloco summary::-webkit-details-marker { display: none; }
+.bloco summary::after {
+    content: "";
+    width: .6rem; height: .6rem;
+    border-right: 2px solid var(--color-dark-varient);
+    border-bottom: 2px solid var(--color-dark-varient);
+    transform: rotate(45deg);
+    transition: transform 160ms ease;
+}
+.bloco[open] summary::after { transform: rotate(225deg); }
+.bloco summary:hover { background: var(--color-light); }
+.bloco > div, .bloco > p { padding: .2rem 1.3rem 1.2rem; }
+.bloco > p { color: var(--color-dark-varient); }
+
+.item-sobre { padding: .6rem 0; border-bottom: 1px solid var(--cor-borda); }
+.item-sobre:last-of-type { border-bottom: none; }
+.item-sobre b { display: block; }
+.item-sobre span { color: var(--color-dark-varient); font-size: .92rem; }
+.item-sobre.linha { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; }
+.item-sobre.linha b { display: inline; color: var(--color-primary); text-align: right; }
+.bloco .texto-pequeno { margin-top: .8rem; }

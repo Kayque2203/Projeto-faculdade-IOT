@@ -1,0 +1,31 @@
+/* ── GRÁFICO (um indicador por vez) ── */
+.grafico-painel {
+    padding: 1.4rem 1.5rem 1.2rem;
+    background: var(--color-white);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--box-shadow);
+    min-width: 0;
+}
+.grafico-painel canvas { display: block; max-width: 100%; margin-top: 1rem; }
+
+/* botões para escolher o indicador */
+.seletor { display: flex; flex-wrap: wrap; gap: .5rem; }
+.seletor button {
+    display: inline-flex; align-items: center; gap: .5rem;
+    min-height: 2.75rem;
+    padding: .4rem 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--cor-borda);
+    background: var(--color-background);
+    color: var(--color-dark-varient);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 150ms ease, color 150ms ease;
+}
+.seletor button:hover { background: var(--color-light); color: var(--color-dark); }
+.seletor button[aria-pressed="true"] {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--on-primary);
+}

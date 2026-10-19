@@ -1,145 +1,194 @@
-// desenha os gráficos de linha (Canvas puro, sem bibliotecas externas)
-// um gráfico por grandeza: temperatura, qualidade do ar, iluminação e ruído
+// gráfico de linha (Canvas puro, sem bibliotecas). Mostra um indicador por vez.
+// Os eixos são fixos para o gráfico não exagerar pequenas variações.
 
-function desenharGraficoLinha(idCanvas, pontos, opcoes) {
+let graficoSelecionado = "temperatura"
+const ALTURA_GRAFICO = 260            // computador e tablet
+const ALTURA_GRAFICO_PEQUENA = 220    // celular
+
+// "#rrggbb" + transparência -> rgba(...)
+function comAlpha(hex, alpha) {
+    const h = hex.replace("#", "")
+    const n = parseInt(h.length === 3 ? h.split("").map(c => c + c).join("") : h, 16)
+    return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`
+}
+
+function montarSeletorGrafico() {
+    const caixa = document.getElementById("seletor-grafico")
+    caixa.innerHTML = ORDEM_METRICAS.map(chave => `
+        <button type="button" data-chave="${chave}" aria-pressed="${chave === graficoSelecionado}">
+            ${icone(METRICAS[chave].icone)}<span>${METRICAS[chave].rotulo}</span>
+        </button>`).join("")
+
+    caixa.addEventListener("click", evento => {
+        const botao = evento.target.closest("button[data-chave]")
+        if (!botao) return
+        graficoSelecionado = botao.dataset.chave
+        caixa.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === botao)))
+        desenharTodosGraficos()
+    })
+}
+
+function desenharGraficoLinha(idCanvas, chave) {
     const canvas = document.getElementById(idCanvas)
     if (!canvas) return
-    canvas.width = canvas.parentElement.clientWidth - 60
+    const m = METRICAS[chave]
+
+    // tamanho: largura do painel (sem o padding) e densidade de pixels da tela
+    const caixa = canvas.parentElement
+    const estilo = getComputedStyle(caixa)
+    const largura = Math.max(240, caixa.clientWidth - parseFloat(estilo.paddingLeft) - parseFloat(estilo.paddingRight))
+    // altura fixa em pixels de tela. NÃO ler do atributo "height" do canvas: ele é reescrito abaixo
+    // (altura x densidade de pixels) e, lido de novo, faria o gráfico crescer a cada atualização.
+    const altura = largura < 520 ? ALTURA_GRAFICO_PEQUENA : ALTURA_GRAFICO
+    const dpr = window.devicePixelRatio || 1
+    canvas.style.width = largura + "px"
+    canvas.style.height = altura + "px"
+    canvas.width = Math.round(largura * dpr)
+    canvas.height = Math.round(altura * dpr)
+
     const ctx = canvas.getContext("2d")
-
-    const largura = canvas.width
-    const altura  = canvas.height
-    const margem  = { topo: 20, direita: 20, base: 34, esquerda: 44 }
-    const areaLargura = largura - margem.esquerda - margem.direita
-    const areaAltura  = altura  - margem.topo - margem.base
-
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctx.clearRect(0, 0, largura, altura)
 
-    const valores = pontos.map(p => p.valor)
-    const minimoDados = Math.min(...valores)
-    const maximoDados = Math.max(...valores)
-    const minimo = opcoes.min ?? Math.floor(minimoDados - (maximoDados - minimoDados || 5) * 0.15)
-    const maximo = opcoes.max ?? Math.ceil(maximoDados + (maximoDados - minimoDados || 5) * 0.15)
+    const corLinha = corCSS("--color-primary")
+    const corTexto = corCSS("--color-dark-varient")
+    const corGrade = corCSS("--cor-borda")
+    const corAtencao = corCSS("--color-warning")
+    const corElevada = corCSS("--color-danger")
+    const corForte = corCSS("--color-dark")
+    const fonte = "Inter, Arial, sans-serif"
 
+    const margem = { topo: 34, direita: 18, base: 32, esquerda: 48 }
+    const areaLargura = largura - margem.esquerda - margem.direita
+    const areaAltura = altura - margem.topo - margem.base
+    const minimo = m.eixoMin, maximo = m.eixoMax
+    const baseY = margem.topo + areaAltura
+
+    const pontos = historicoLeituras.map(l => ({ valor: l[chave], dataHora: l.dataHora }))
     const escalaX = i => margem.esquerda + (i / Math.max(pontos.length - 1, 1)) * areaLargura
-    const escalaY = v => margem.topo + areaAltura - ((v - minimo) / (maximo - minimo || 1)) * areaAltura
+    const escalaY = v => baseY - ((v - minimo) / (maximo - minimo)) * areaAltura
 
-    // eixos
-    ctx.strokeStyle = "rgba(132,139,200,0.3)"
-    ctx.lineWidth = 1
-    ctx.beginPath()
-    ctx.moveTo(margem.esquerda, margem.topo)
-    ctx.lineTo(margem.esquerda, margem.topo + areaAltura)
-    ctx.lineTo(margem.esquerda + areaLargura, margem.topo + areaAltura)
-    ctx.stroke()
+    // faixa confortável em azul bem claro (a mesma ideia das barras dos indicadores)
+    const l = m.limites
+    const confDe = l.atencaoMin != null ? l.atencaoMin : minimo
+    ctx.fillStyle = comAlpha(corLinha, 0.08)
+    ctx.fillRect(margem.esquerda, escalaY(l.atencaoMax), areaLargura, escalaY(confDe) - escalaY(l.atencaoMax))
 
-    // linhas de referência (limites)
-    ;(opcoes.referencias || []).forEach(ref => {
+    // grade e números do eixo Y
+    ctx.font = `12px ${fonte}`
+    ctx.textAlign = "right"
+    for (let i = 0; i <= 4; i++) {
+        const valor = minimo + ((maximo - minimo) * i) / 4
+        const y = escalaY(valor)
+        ctx.strokeStyle = comAlpha(corGrade, 0.7)
+        ctx.lineWidth = 1
+        ctx.beginPath(); ctx.moveTo(margem.esquerda, y); ctx.lineTo(margem.esquerda + areaLargura, y); ctx.stroke()
+        ctx.fillStyle = corTexto
+        ctx.fillText(String(Math.round(valor)), margem.esquerda - 8, y + 4)
+    }
+
+    // linhas dos limites (tracejadas e com texto)
+    const referencias = []
+    if (l.atencaoMax != null) referencias.push({ valor: l.atencaoMax, cor: corAtencao, rotulo: "Atenção", y: -5 })
+    if (l.elevadaMax != null) referencias.push({ valor: l.elevadaMax, cor: corElevada, rotulo: "Atenção elevada", y: -5 })
+    if (l.atencaoMin != null) referencias.push({ valor: l.atencaoMin, cor: corAtencao, rotulo: "Atenção", y: -5 })
+    if (l.elevadaMin != null) referencias.push({ valor: l.elevadaMin, cor: corElevada, rotulo: "Atenção elevada", y: -5 })
+
+    const rotulosUsados = []
+    ctx.font = `600 12px ${fonte}`
+    referencias.forEach(ref => {
         if (ref.valor < minimo || ref.valor > maximo) return
         const y = escalaY(ref.valor)
-        ctx.setLineDash([4, 4])
+        ctx.setLineDash([6, 5])
         ctx.strokeStyle = ref.cor
-        ctx.beginPath()
-        ctx.moveTo(margem.esquerda, y)
-        ctx.lineTo(margem.esquerda + areaLargura, y)
-        ctx.stroke()
+        ctx.lineWidth = 1.6
+        ctx.beginPath(); ctx.moveTo(margem.esquerda, y); ctx.lineTo(margem.esquerda + areaLargura, y); ctx.stroke()
         ctx.setLineDash([])
+        const yTexto = y + ref.y
+        if (rotulosUsados.some(u => Math.abs(u - yTexto) < 15)) return   // evita texto sobre texto
+        rotulosUsados.push(yTexto)
         ctx.fillStyle = ref.cor
-        ctx.font = "10px Poppins, sans-serif"
         ctx.textAlign = "left"
-        ctx.fillText(ref.rotulo, margem.esquerda + 4, y - 4)
+        ctx.fillText(ref.rotulo, margem.esquerda + 8, yTexto)
     })
 
-    // rótulos do eixo Y (min/max)
-    ctx.fillStyle = "#677483"
-    ctx.font = "10px Poppins, sans-serif"
-    ctx.textAlign = "right"
-    ctx.fillText(String(maximo), margem.esquerda - 6, margem.topo + 4)
-    ctx.fillText(String(minimo), margem.esquerda - 6, margem.topo + areaAltura)
-
-    // linha de dados
-    ctx.strokeStyle = opcoes.cor
-    ctx.lineWidth = 2.2
-    ctx.beginPath()
-    pontos.forEach((ponto, i) => {
-        const x = escalaX(i)
-        const y = escalaY(ponto.valor)
-        if (i === 0) ctx.moveTo(x, y)
-        else ctx.lineTo(x, y)
+    // trechos contínuos da linha (uma "Leitura indisponível" interrompe o traço)
+    const trechos = []
+    let atual = []
+    pontos.forEach((p, i) => {
+        if (p.valor === null) { if (atual.length) trechos.push(atual); atual = []; return }
+        atual.push({ x: escalaX(i), y: escalaY(p.valor) })
     })
-    ctx.stroke()
+    if (atual.length) trechos.push(atual)
 
-    // área preenchida sob a linha
-    ctx.lineTo(escalaX(pontos.length - 1), margem.topo + areaAltura)
-    ctx.lineTo(escalaX(0), margem.topo + areaAltura)
-    ctx.closePath()
-    ctx.fillStyle = opcoes.corArea
-    ctx.fill()
-
-    // pontos + rótulo do último valor
-    pontos.forEach((ponto, i) => {
-        const x = escalaX(i)
-        const y = escalaY(ponto.valor)
-        ctx.fillStyle = opcoes.cor
+    // área suave sob a linha
+    const degrade = ctx.createLinearGradient(0, margem.topo, 0, baseY)
+    degrade.addColorStop(0, comAlpha(corLinha, 0.22))
+    degrade.addColorStop(1, comAlpha(corLinha, 0.02))
+    trechos.forEach(t => {
+        if (t.length < 2) return
         ctx.beginPath()
-        ctx.arc(x, y, i === pontos.length - 1 ? 3.5 : 2, 0, Math.PI * 2)
+        ctx.moveTo(t[0].x, baseY)
+        t.forEach(pt => ctx.lineTo(pt.x, pt.y))
+        ctx.lineTo(t.at(-1).x, baseY)
+        ctx.closePath()
+        ctx.fillStyle = degrade
         ctx.fill()
     })
 
-    const ultimo = pontos.at(-1)
-    ctx.fillStyle = opcoes.cor
-    ctx.font = "bold 11px Poppins, sans-serif"
-    ctx.textAlign = "right"
-    ctx.fillText(opcoes.formatar(ultimo.valor), margem.esquerda + areaLargura, escalaY(ultimo.valor) - 8)
+    // linha
+    ctx.strokeStyle = corLinha
+    ctx.lineWidth = 3
+    ctx.lineJoin = "round"
+    ctx.lineCap = "round"
+    trechos.forEach(t => {
+        ctx.beginPath()
+        t.forEach((pt, i) => i === 0 ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y))
+        ctx.stroke()
+    })
 
-    // eixo X (horários inicial / final)
-    ctx.fillStyle = "#677483"
-    ctx.font = "10px Poppins, sans-serif"
-    ctx.textAlign = "left"
-    ctx.fillText(formatarHora(pontos[0].dataHora).slice(0, 5), margem.esquerda, altura - 8)
+    // pontos (o último é maior e tem contorno)
+    const fundoCartao = corCSS("--color-white")
+    pontos.forEach((p, i) => {
+        if (p.valor === null) return
+        const ultimoPonto = i === pontos.length - 1
+        ctx.beginPath()
+        ctx.arc(escalaX(i), escalaY(p.valor), ultimoPonto ? 6 : 3, 0, Math.PI * 2)
+        ctx.fillStyle = ultimoPonto ? corLinha : corLinha
+        ctx.fill()
+        if (ultimoPonto) { ctx.lineWidth = 3; ctx.strokeStyle = fundoCartao; ctx.stroke() }
+    })
+
+    // valor mais recente, acima do gráfico
+    const ultimo = pontos.at(-1)
+    ctx.font = `700 14px ${fonte}`
     ctx.textAlign = "right"
-    ctx.fillText(formatarHora(pontos.at(-1).dataHora).slice(0, 5), margem.esquerda + areaLargura, altura - 8)
+    if (ultimo.valor === null) {
+        ctx.fillStyle = corElevada
+        ctx.fillText("Agora: leitura indisponível", margem.esquerda + areaLargura, 18)
+    } else {
+        ctx.fillStyle = corForte
+        const textoValor = m.categorias ? `índice ${ultimo.valor}` : formatarValor(chave, ultimo.valor)
+        ctx.fillText(`Agora: ${textoValor}`, margem.esquerda + areaLargura, 18)
+    }
+
+    // eixo X: horário inicial, do meio e final
+    ctx.fillStyle = corTexto
+    ctx.font = `12px ${fonte}`
+    ctx.textAlign = "left"
+    ctx.fillText(formatarHora(pontos[0].dataHora), margem.esquerda, altura - 8)
+    ctx.textAlign = "center"
+    ctx.fillText(formatarHora(pontos[Math.floor(pontos.length / 2)].dataHora), margem.esquerda + areaLargura / 2, altura - 8)
+    ctx.textAlign = "right"
+    ctx.fillText(formatarHora(pontos.at(-1).dataHora), margem.esquerda + areaLargura, altura - 8)
+
+    // descrição para leitores de tela
+    const textoUltimo = ultimo.valor === null
+        ? "leitura indisponível"
+        : (m.categorias ? `${formatarValor(chave, ultimo.valor).toLowerCase()}, índice ${ultimo.valor}` : formatarValor(chave, ultimo.valor))
+    canvas.setAttribute("aria-label", `Gráfico de linha de ${m.rotulo.toLowerCase()}. Último valor: ${textoUltimo}, às ${formatarHora(ultimo.dataHora)}.`)
 }
 
 function desenharTodosGraficos() {
-    const pontosTemperatura = historicoLeituras.map(l => ({ valor: l.temperatura, dataHora: l.dataHora }))
-    const pontosAr          = historicoLeituras.map(l => ({ valor: l.indiceAr, dataHora: l.dataHora }))
-    const pontosRuido       = historicoLeituras.map(l => ({ valor: l.ruido, dataHora: l.dataHora }))
-    const pontosIluminacao  = historicoLeituras.map(l => ({ valor: l.iluminacao, dataHora: l.dataHora }))
-
-    desenharGraficoLinha("grafico-temperatura", pontosTemperatura, {
-        cor: "#2E8B57", corArea: "rgba(46,139,87,0.12)",
-        formatar: v => `${formatarNumero(v)}°C`,
-        referencias: [
-            { valor: LIMITES.temperatura.atencaoAlta, cor: "#ffbb55", rotulo: "Atenção" },
-            { valor: LIMITES.temperatura.criticaAlta, cor: "#ff7782", rotulo: "Crítico" }
-        ]
-    })
-
-    desenharGraficoLinha("grafico-qualidade-ar", pontosAr, {
-        cor: "#7d8da1", corArea: "rgba(125,141,161,0.12)", min: 0, max: 100,
-        formatar: v => `Índice ${Math.round(v)}`,
-        referencias: [
-            { valor: LIMITES.indiceAr.boa, cor: "#41f1b6", rotulo: "Boa" },
-            { valor: LIMITES.indiceAr.moderada, cor: "#ffbb55", rotulo: "Moderada" }
-        ]
-    })
-
-    desenharGraficoLinha("grafico-ruido", pontosRuido, {
-        cor: "#CCAA00", corArea: "rgba(204,170,0,0.12)",
-        formatar: v => `${Math.round(v)} dB`,
-        referencias: [
-            { valor: LIMITES.ruido.atencao, cor: "#ffbb55", rotulo: "Atenção" },
-            { valor: LIMITES.ruido.critico, cor: "#ff7782", rotulo: "Crítico" }
-        ]
-    })
-
-    desenharGraficoLinha("grafico-iluminacao", pontosIluminacao, {
-        cor: "#ffbb55", corArea: "rgba(255,187,85,0.14)",
-        formatar: v => `${Math.round(v)} lux`,
-        referencias: [
-            { valor: LIMITES.iluminacao.atencao, cor: "#ffbb55", rotulo: "Atenção" },
-            { valor: LIMITES.iluminacao.critico, cor: "#ff7782", rotulo: "Crítico" }
-        ]
-    })
+    desenharGraficoLinha("grafico-principal", graficoSelecionado)
 }

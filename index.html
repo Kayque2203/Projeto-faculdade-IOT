@@ -3,214 +3,227 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoramento Ambiental de Sala de Aula</title>
+    <title>Smart Room — Monitoramento Ambiental</title>
+    <meta name="description" content="Painel de monitoramento ambiental para apoiar espaços sensoriais acessíveis a pessoas com TEA.">
     <link rel="shortcut icon" href="./images/logo.png">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+    <!-- Fonte Inter (sem internet, o navegador usa Arial automaticamente) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="css/variaveis.css">
     <link rel="stylesheet" href="css/estrutura.css">
     <link rel="stylesheet" href="css/cabecalho.css">
-    <link rel="stylesheet" href="css/menu-lateral.css">
-    <link rel="stylesheet" href="css/cartoes.css">
+    <link rel="stylesheet" href="css/hero.css">
+    <link rel="stylesheet" href="css/indicadores.css">
+    <link rel="stylesheet" href="css/graficos.css">
     <link rel="stylesheet" href="css/tabelas.css">
-    <link rel="stylesheet" href="css/painel-direito.css">
+    <link rel="stylesheet" href="css/sobre.css">
+    <link rel="stylesheet" href="css/demo.css">
     <link rel="stylesheet" href="css/responsivo.css">
 </head>
 <body>
 
+    <a class="pular-conteudo" href="#agora">Ir para o conteúdo principal</a>
+
+    <!-- Lido por leitores de tela só quando o estado muda -->
+    <div id="anuncio" class="so-leitor-de-tela" role="status" aria-live="polite"></div>
+
     <header>
         <div class="logo">
-            <span class="material-icons-sharp">sensors</span>
-            <h2>Sala<span class="danger">Monitor</span></h2>
+            <span class="logo-icone" data-icone="sensors"></span>
+            <span class="logo-nome">Smart Room</span>
         </div>
 
-        <div class="navbar">
-            <a href="#dashboard" class="active">
-                <span class="material-icons-sharp">dashboard</span>
-                <h3>Dashboard</h3>
+        <nav class="navbar" aria-label="Seções da página">
+            <a href="#agora" class="active" aria-current="true">
+                <span data-icone="dashboard"></span>
+                <span class="rotulo">Agora</span>
             </a>
             <a href="#monitoramento">
-                <span class="material-icons-sharp">show_chart</span>
-                <h3>Monitoramento</h3>
+                <span data-icone="chart"></span>
+                <span class="rotulo">Gráficos</span>
             </a>
             <a href="#historico">
-                <span class="material-icons-sharp">history</span>
-                <h3>Histórico</h3>
+                <span data-icone="history"></span>
+                <span class="rotulo">Histórico</span>
             </a>
             <a href="#alertas">
-                <span class="material-icons-sharp">notifications</span>
-                <h3>Alertas</h3>
+                <span data-icone="bell"></span>
+                <span class="rotulo">Alertas</span>
             </a>
-        </div>
+            <a href="#sobre">
+                <span data-icone="info"></span>
+                <span class="rotulo">Sobre</span>
+            </a>
+        </nav>
 
-        <div class="theme-toggler">
-            <span class="material-icons-sharp active">light_mode</span>
-            <span class="material-icons-sharp">dark_mode</span>
-        </div>
+        <button type="button" class="theme-toggler" id="botao-tema" aria-pressed="false" aria-label="Usar tema escuro">
+            <span class="icone-tema" data-icone="sun"></span>
+            <span class="icone-tema" data-icone="moon"></span>
+        </button>
     </header>
 
-    <div class="container">
+    <main id="conteudo">
 
-        <!-- MENU LATERAL -->
-        <aside>
-            <div class="sidebar-info">
-                <div class="sidebar-icon">
-                    <span class="material-icons-sharp">meeting_room</span>
-                </div>
-                <div class="info">
-                    <p><b>Sistema de</b></p>
-                    <small class="text-muted">Monitoramento Ambiental</small>
-                </div>
+        <!-- AGORA -->
+        <section id="agora" aria-labelledby="titulo-agora">
+            <h1 id="titulo-agora" class="so-leitor-de-tela">Situação atual da sala</h1>
+
+            <div class="hero" id="status-geral"></div>
+
+            <div class="alertas-ativos" id="alertas-ativos" aria-live="off"></div>
+
+            <h2 class="titulo-secao">Indicadores</h2>
+            <div class="cards-metricas" id="cards-metricas"></div>
+            <p class="nota">
+                A barra de cada indicador mostra onde está o valor. A faixa lisa é a zona confortável;
+                as faixas listradas são os limites de atenção.
+            </p>
+        </section>
+
+        <!-- GRÁFICOS -->
+        <section id="monitoramento" aria-labelledby="titulo-graficos">
+            <h2 id="titulo-graficos" class="titulo-secao">Como mudou nos últimos minutos</h2>
+
+            <div class="grafico-painel">
+                <div class="seletor" role="group" aria-label="Escolha o indicador do gráfico" id="seletor-grafico"></div>
+                <canvas id="grafico-principal" height="260" role="img"></canvas>
+                <p class="nota">As linhas tracejadas marcam os limites de atenção.</p>
             </div>
+        </section>
 
-            <div class="resumo">
-                <h5>Resumo do Sistema</h5>
-
-                <div class="resumo-item">
-                    <span class="material-icons-sharp primary">insights</span>
-                    <div>
-                        <small class="text-muted">Status Atual</small>
-                        <p id="side-status">-</p>
-                    </div>
-                </div>
-
-                <div class="resumo-item">
-                    <span class="material-icons-sharp success">update</span>
-                    <div>
-                        <small class="text-muted">Última Atualização</small>
-                        <p id="side-atualizacao">-</p>
-                    </div>
-                </div>
-
-                <div class="resumo-item">
-                    <span class="material-icons-sharp danger">notifications_active</span>
-                    <div>
-                        <small class="text-muted">Alertas Registrados</small>
-                        <p id="side-alertas">-</p>
-                    </div>
-                </div>
-
-                <div class="resumo-item">
-                    <span class="material-icons-sharp warning">history</span>
-                    <div>
-                        <small class="text-muted">Registros no Histórico</small>
-                        <p id="side-registros">-</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="poluentes-lista">
-                <h5>Sensores Planejados (ESP32)</h5>
-                <div id="lista-sensores-planejados"></div>
-            </div>
-        </aside>
-
-        <!-- CONTEÚDO PRINCIPAL -->
-        <main>
-
-            <section id="dashboard">
-                <h1>Dashboard</h1>
-
-                <div class="status-geral" id="status-geral"></div>
-
-                <div class="cards-metricas" id="cards-metricas"></div>
-            </section>
-
-            <section id="monitoramento" style="margin-top: 2rem;">
-                <h1>Monitoramento</h1>
-                <div class="grid-graficos">
-                    <div class="card-box">
-                        <h3>Temperatura ao Longo do Tempo</h3>
-                        <canvas id="grafico-temperatura" height="200"></canvas>
-                    </div>
-                    <div class="card-box">
-                        <h3>Qualidade do Ar ao Longo do Tempo</h3>
-                        <canvas id="grafico-qualidade-ar" height="200"></canvas>
-                    </div>
-                    <div class="card-box">
-                        <h3>Ruído ao Longo do Tempo</h3>
-                        <canvas id="grafico-ruido" height="200"></canvas>
-                    </div>
-                    <div class="card-box">
-                        <h3>Iluminação ao Longo do Tempo</h3>
-                        <canvas id="grafico-iluminacao" height="200"></canvas>
-                    </div>
-                </div>
-            </section>
-
-            <section id="historico" style="margin-top: 2rem;">
-                <h1>Histórico de Medições</h1>
+        <!-- HISTÓRICO -->
+        <section id="historico" aria-labelledby="titulo-historico">
+            <h2 id="titulo-historico" class="titulo-secao">Últimas medições</h2>
+            <div class="tabela-rolagem" tabindex="0" role="region" aria-label="Tabela do histórico de medições">
                 <table class="data-table">
+                    <caption class="so-leitor-de-tela">Últimas medições registradas, da mais recente para a mais antiga</caption>
                     <thead>
                         <tr>
-                            <th>Horário</th>
-                            <th>Temperatura</th>
-                            <th>Qualidade do Ar</th>
-                            <th>Iluminação</th>
-                            <th>Ruído</th>
+                            <th scope="col">Horário</th>
+                            <th scope="col">Temperatura</th>
+                            <th scope="col">Umidade</th>
+                            <th scope="col">Qualidade do ar</th>
+                            <th scope="col">Luminosidade</th>
+                            <th scope="col">Nível de som</th>
                         </tr>
                     </thead>
                     <tbody id="tabela-historico"></tbody>
                 </table>
-            </section>
+            </div>
+        </section>
 
-            <section id="alertas" style="margin-top: 2rem;">
-                <h1>Alertas</h1>
+        <!-- ALERTAS -->
+        <section id="alertas" aria-labelledby="titulo-alertas">
+            <h2 id="titulo-alertas" class="titulo-secao">Alertas</h2>
+            <p class="nota nota-topo">Os alertas aparecem só na tela, sem som. Cada um tem texto e símbolo, não só cor.</p>
+            <div class="tabela-rolagem" tabindex="0" role="region" aria-label="Tabela de alertas">
                 <table class="data-table">
+                    <caption class="so-leitor-de-tela">Alertas gerados quando uma leitura passa dos limites</caption>
                     <thead>
                         <tr>
-                            <th>Mensagem</th>
-                            <th>Data / Hora</th>
-                            <th>Status</th>
+                            <th scope="col">Mensagem</th>
+                            <th scope="col">Nível</th>
+                            <th scope="col">Situação</th>
+                            <th scope="col">Início</th>
                         </tr>
                     </thead>
                     <tbody id="tabela-alertas"></tbody>
                 </table>
-            </section>
-
-        </main>
-
-        <!-- PAINEL DIREITO -->
-        <div class="right">
-
-            <div class="right-section">
-                <h2>Últimos Registros</h2>
-                <div class="updates" id="ultimos-registros"></div>
             </div>
+        </section>
 
-            <div class="right-section" style="margin-top: 2rem;">
-                <h2>Limites Configurados</h2>
-                <div class="updates" id="lista-limites"></div>
-            </div>
+        <!-- SOBRE -->
+        <section id="sobre" aria-labelledby="titulo-sobre">
+            <h2 id="titulo-sobre" class="titulo-secao">Sobre o Smart Room</h2>
 
-            <div class="right-section" style="margin-top: 2rem;">
-                <h2>Sobre o Sistema</h2>
-                <div class="updates">
-                    <div class="update-item" style="border:none">
-                        <small>
-                            Este dashboard representa a interface de um sistema de monitoramento
-                            ambiental de sala de aula. Nesta etapa os dados são <b>simulados em
-                            JavaScript</b>; futuramente serão substituídos por leituras reais de
-                            um <b>ESP32</b> com os sensores planejados, sem necessidade de
-                            reconstruir a interface.
-                        </small>
-                    </div>
+            <div class="sobre-grade">
+                <div class="sobre-texto">
+                    <p>
+                        O Smart Room monitora temperatura, umidade, qualidade do ar, luminosidade e
+                        nível de som para ajudar a planejar ambientes mais acessíveis a pessoas com TEA.
+                    </p>
+                    <p>
+                        Cada pessoa tem sensibilidades diferentes. Os indicadores apoiam a avaliação do
+                        ambiente, mas a decisão deve considerar as necessidades de quem está no espaço.
+                    </p>
+                    <p class="aviso">
+                        As leituras são indicativas. O sistema não diagnostica TEA e não substitui o
+                        acompanhamento profissional.
+                    </p>
+                </div>
+
+                <div class="sobre-blocos">
+                    <details class="bloco">
+                        <summary>Limites de atenção</summary>
+                        <div id="lista-limites"></div>
+                    </details>
+                    <details class="bloco">
+                        <summary>Componentes previstos</summary>
+                        <div id="lista-sensores-planejados"></div>
+                    </details>
+                    <details class="bloco">
+                        <summary>De onde vêm os dados?</summary>
+                        <p id="texto-fonte"></p>
+                    </details>
                 </div>
             </div>
+        </section>
 
+    </main>
+
+    <footer>
+        <p>Smart Room · Projeto de Análise e Desenvolvimento de Sistemas · Centro Universitário Ítalo Brasileiro</p>
+    </footer>
+
+    <!-- CONEXÃO E DEMONSTRAÇÃO -->
+    <details class="painel-flutuante" id="painel-demo">
+        <summary>
+            <span data-icone="sliders"></span>
+            <span>Conexão e demonstração</span>
+        </summary>
+
+        <div class="painel-conteudo">
+            <section aria-labelledby="titulo-conexao">
+                <h2 id="titulo-conexao">Fonte dos dados</h2>
+                <p class="texto-pequeno" id="texto-fonte-atual"></p>
+                <form id="form-esp32" novalidate>
+                    <label for="campo-esp32">Endereço do ESP32</label>
+                    <input id="campo-esp32" type="text" inputmode="url" autocomplete="off"
+                           placeholder="192.168.0.50 ou smartroom.local">
+                    <div class="botoes-demo">
+                        <button type="submit" id="btn-conectar" class="principal">Conectar ao ESP32</button>
+                        <button type="button" id="btn-simulacao" class="secundario">Usar simulação</button>
+                    </div>
+                </form>
+                <p id="msg-conexao" class="mensagem" role="status"></p>
+            </section>
+
+            <section aria-labelledby="titulo-demo" id="grupo-simulacoes">
+                <h2 id="titulo-demo">Simulações para a apresentação</h2>
+                <p class="texto-pequeno">Só funcionam com dados simulados e não fazem parte do sistema final.</p>
+                <div class="botoes-demo">
+                    <button type="button" id="btn-luz">Simular luz forte</button>
+                    <button type="button" id="btn-som">Simular som alto</button>
+                    <button type="button" id="btn-falha" aria-pressed="false">Simular falha do sensor de som</button>
+                    <button type="button" id="btn-conexao" aria-pressed="false">Simular perda de conexão</button>
+                    <button type="button" id="btn-pausa" aria-pressed="false">Pausar atualização</button>
+                    <button type="button" id="btn-restaurar" class="secundario">Restaurar normal</button>
+                </div>
+            </section>
         </div>
+    </details>
 
-    </div>
-
-    
+    <script src="js/icones.js"></script>
     <script src="js/auxiliares.js"></script>
     <script src="js/dados-simulados.js"></script>
-    <script src="js/menu-lateral.js"></script>
-    <script src="js/cartoes.js"></script>
+    <script src="js/fonte-dados.js"></script>
+    <script src="js/indicadores.js"></script>
     <script src="js/tabelas.js"></script>
-    <script src="js/painel-direito.js"></script>
+    <script src="js/sobre.js"></script>
     <script src="js/grafico.js"></script>
     <script src="js/tema.js"></script>
+    <script src="js/controles.js"></script>
     <script src="js/principal.js"></script>
 </body>
 </html>

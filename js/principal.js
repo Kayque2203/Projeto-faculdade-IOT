@@ -1,42 +1,66 @@
-// arquivo principal — inicializa o dashboard e controla a simulação
-// (não há mais fetch: os dados vêm de js/dados-simulados.js)
+// arquivo principal — inicializa o painel e controla a atualização das leituras
+
+let assinaturaAnterior = null
+let desatualizadoAnterior = false
 
 function renderizarTudo() {
     const leitura = obterUltimaLeitura()
 
     preencherCardsMetricas(leitura)
-    atualizarStatusGeral(leitura)
-    preencherMenuLateral(leitura)
+    const status = atualizarStatusGeral(leitura)
     preencherTabelaHistorico()
     preencherTabelaAlertas()
-    preencherUltimosRegistros()
-    preencherLimitesConfigurados()
+    preencherSobre()
     desenharTodosGraficos()
+
+    // avisa leitores de tela só quando a situação ou o estado do sistema MUDAM
+    const estado = obterEstadoSistema()
+    const assinatura = `${status.texto}|${estado.texto}`
+    if (assinaturaAnterior !== null && assinatura !== assinaturaAnterior) {
+        document.getElementById("anuncio").textContent =
+            status.texto === estado.texto ? `${status.texto}.` : `${status.texto}. ${estado.texto}.`
+    }
+    assinaturaAnterior = assinatura
 }
 
-// atualiza apenas o relógio (data/horário) sem gerar uma nova leitura,
-// para os cards de Data/Horário ficarem sempre em tempo real
-function atualizarRelogio() {
-    const ultima = obterUltimaLeitura()
-    const leituraComHoraAtual = { ...ultima, dataHora: new Date() }
-    preencherCardsMetricas(leituraComHoraAtual)
+// a cada segundo, confere se as leituras ficaram velhas (sem redesenhar à toa)
+function conferirDesatualizacao() {
+    const agora = leituraDesatualizada()
+    if (agora !== desatualizadoAnterior) {
+        desatualizadoAnterior = agora
+        renderizarTudo()
+    }
 }
 
-function inicializar() {
+async function proximaLeitura() {
+    if (conexao.pausado) return
+    if (fonteDados.modo === "esp32") {
+        await atualizarDoESP32()
+    } else {
+        if (!conexao.ativa) return
+        gerarNovaLeitura()
+    }
     renderizarTudo()
+}
+
+async function inicializar() {
     ativarNavbar()
     ativarAlternarTema()
+    montarSeletorGrafico()
+    ativarControlesDemo()
 
-    // gera uma nova leitura simulada periodicamente (dados + gráficos + tabelas)
-    setInterval(() => {
-        gerarNovaLeitura()
-        renderizarTudo()
-    }, CONFIG_SIMULACAO.intervaloNovaLeituraMs)
+    // se o endereço do ESP32 foi salvo antes, tenta reconectar sem travar a abertura
+    const salvo = lerEnderecoSalvo()
+    if (salvo) {
+        const resultado = await conectarESP32(salvo)
+        mostrarMensagemConexao(resultado.ok ? resultado.mensagem : resultado.mensagem, resultado.ok)
+    }
 
-    // mantém o relógio em tempo real entre uma leitura simulada e outra
-    setInterval(atualizarRelogio, CONFIG_SIMULACAO.intervaloRelogioMs)
+    renderizarTudo()
+    atualizarPainelDemo()
 
-    // redesenha os gráficos ao redimensionar a janela (canvas depende da largura)
+    setInterval(proximaLeitura, CONFIG_SIMULACAO.intervaloNovaLeituraMs)
+    setInterval(conferirDesatualizacao, 1000)
     window.addEventListener("resize", desenharTodosGraficos)
 }
 

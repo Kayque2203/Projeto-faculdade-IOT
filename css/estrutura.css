@@ -1,9 +1,42 @@
 /* ── LAYOUT PRINCIPAL ── */
-.container {
-    display: grid;
-    width: 96%;
+main {
+    width: min(70rem, 92%);
     margin: 0 auto;
-    gap: 1.8rem;
-    grid-template-columns: 16rem auto 22rem;
-    padding-top: 5rem;
+    padding: 5.5rem 0 1rem;
 }
+main section { margin-bottom: 3.2rem; }
+
+.titulo-secao {
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: -.01em;
+    margin-bottom: 1rem;
+}
+.nota { color: var(--color-info); font-size: .9rem; margin-top: .9rem; max-width: 64ch; }
+.nota-topo { margin: -.4rem 0 1rem; }
+.texto-pequeno { font-size: .875rem; color: var(--color-info); }
+
+footer {
+    text-align: center;
+    color: var(--color-info);
+    font-size: .875rem;
+    padding: 2rem 1rem 6rem;
+    border-top: 1px solid var(--cor-borda);
+}
+
+/* ── SELOS DE NÍVEL (texto + símbolo + cor) ── */
+.selo {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .2rem .7rem;
+    border-radius: 999px;
+    border: 1px solid currentColor;
+    font-weight: 600;
+    font-size: .875rem;
+    line-height: 1.4;
+}
+.selo.nivel-0 { color: var(--color-success); background: var(--fundo-success); }
+.selo.nivel-1 { color: var(--color-warning); background: var(--fundo-warning); }
+.selo.nivel-2 { color: var(--color-danger);  background: var(--fundo-danger); }
+.selo.nivel-sem { color: var(--color-dark-varient); background: var(--fundo-neutro); }

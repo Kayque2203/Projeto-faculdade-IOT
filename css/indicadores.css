@@ -1,0 +1,87 @@
+/* ── CARTÕES DOS INDICADORES ──
+   Grade de 6 colunas: 3 cartões em cima (2 colunas cada) e 2 embaixo (3 colunas cada). */
+.cards-metricas {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 1.2rem;
+}
+.indicador { grid-column: span 2; }
+.indicador:nth-child(n + 4) { grid-column: span 3; }
+
+.indicador {
+    --nivel-cor: var(--color-dark-varient);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .55rem;
+    padding: 1.4rem 1.5rem 1.3rem;
+    background: var(--color-white);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--box-shadow);
+    overflow: hidden;
+    transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.indicador::before {            /* faixa colorida no topo (decoração; o texto do selo informa o nível) */
+    content: "";
+    position: absolute; inset: 0 0 auto 0;
+    height: 5px;
+    background: var(--nivel-cor);
+}
+.indicador:hover { transform: translateY(-2px); box-shadow: var(--sombra-forte); }
+.indicador.nivel-0 { --nivel-cor: var(--color-success); }
+.indicador.nivel-1 { --nivel-cor: var(--color-warning); }
+.indicador.nivel-2 { --nivel-cor: var(--color-danger); }
+.indicador.nivel-sem::before { background: repeating-linear-gradient(90deg, var(--nivel-cor) 0 8px, transparent 8px 14px); }
+
+.indicador-topo { display: flex; align-items: center; gap: .75rem; }
+.indicador-icone {
+    display: grid; place-items: center;
+    width: 2.6rem; height: 2.6rem;
+    border-radius: .85rem;
+    background: var(--color-light);
+    color: var(--color-primary);
+}
+.indicador-icone .icone { width: 1.4rem; height: 1.4rem; }
+.indicador h3 { font-size: 1.02rem; font-weight: 600; color: var(--color-dark-varient); }
+
+.indicador-valor { display: flex; align-items: baseline; gap: .35rem; margin-top: .2rem; color: var(--color-dark); }
+.indicador-valor .numero { font-size: 2.7rem; font-weight: 800; line-height: 1.05; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.indicador-valor .unidade { font-size: 1.15rem; font-weight: 600; color: var(--color-dark-varient); }
+.indicador-valor.categoria .numero { font-size: 2.2rem; }
+.indicador-valor.indisponivel .numero { font-size: 1.4rem; font-weight: 700; color: var(--color-dark-varient); letter-spacing: 0; }
+.indicador-extra { color: var(--color-info); font-size: .9rem; margin-top: -.35rem; }
+
+.indicador.desatualizado .indicador-valor { opacity: .55; }
+
+/* ── BARRA DE FAIXA ──
+   faixa lisa = zona confortável; listradas = limites de atenção (não depende só de cor) */
+.faixa { position: relative; width: 100%; margin-top: auto; padding-top: .9rem; padding-bottom: 1.3rem; }
+.trilho { display: flex; height: .8rem; border-radius: 999px; overflow: hidden; }
+.zona { display: block; min-width: 0; }
+.zona.z0 { background: var(--faixa-ok); }
+.zona.z1 { background: repeating-linear-gradient(135deg, var(--color-warning) 0 2px, var(--fundo-warning) 2px 7px); }
+.zona.z2 { background: repeating-linear-gradient(135deg, var(--color-danger) 0 2px, var(--fundo-danger) 2px 7px); }
+.faixa.sem-leitura .trilho { opacity: .45; }
+
+.marcador {
+    position: absolute;
+    top: .62rem;
+    width: 1.35rem; height: 1.35rem;
+    margin-left: -.675rem;
+    border-radius: 50%;
+    background: var(--color-dark);
+    border: 3px solid var(--color-white);
+    box-shadow: 0 0 0 1px var(--color-dark), 0 2px 6px rgba(0, 0, 0, .25);
+    transition: left 500ms ease;
+}
+.marcador.apagado { opacity: .45; }
+
+.faixa-eixo {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    display: flex; justify-content: space-between;
+    font-size: .78rem; color: var(--color-info);
+    font-variant-numeric: tabular-nums;
+}
+.indicador-faixa { font-size: .88rem; color: var(--color-info); }

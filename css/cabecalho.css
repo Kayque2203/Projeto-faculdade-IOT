@@ -1,68 +1,75 @@
 /* ── HEADER ── */
 header {
     position: fixed;
-    width: 100vw;
+    top: 0; left: 0;
+    width: 100%;
+    height: 4rem;
     z-index: 1000;
-    background: var(--color-background);
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    padding: 0 3rem;
+    padding: 0 max(1.2rem, calc((100% - 70rem) / 2));
+    gap: 1rem;
+    background: color-mix(in srgb, var(--color-background) 88%, transparent);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid transparent;
+    transition: border-color 200ms ease, box-shadow 200ms ease;
 }
-header.active { box-shadow: var(--box-shadow); }
+header.active { border-bottom-color: var(--cor-borda); box-shadow: var(--box-shadow); }
 
 /* ── LOGO ── */
-header .logo {
-    display: flex;
-    gap: .8rem;
-    align-items: center;
-    margin-right: auto;
+header .logo { display: flex; gap: .7rem; align-items: center; margin-right: auto; }
+header .logo-icone {
+    display: grid; place-items: center;
+    width: 2.4rem; height: 2.4rem;
+    border-radius: .75rem;
+    background: var(--color-primary);
+    color: var(--on-primary);
 }
-header .logo span { font-size: 2rem; color: var(--color-primary); }
-header .logo h2   { font-size: 1.4rem; }
+header .logo-icone .icone { width: 1.4rem; height: 1.4rem; }
+header .logo-nome { font-weight: 800; font-size: 1.2rem; letter-spacing: -.01em; }
 
-/* ── NAVBAR ── */
-header .navbar { display:flex; align-items:center; }
+/* ── NAVEGAÇÃO ── */
+header .navbar { display: flex; align-items: center; gap: .2rem; }
 header .navbar a {
     display: flex;
-    margin-left: 2rem;
-    gap: 1rem;
+    gap: .5rem;
     align-items: center;
-    position: relative;
-    height: 3.7rem;
-    transition: all 300ms ease;
-    padding: 0 2rem;
-    color: var(--color-info);
+    justify-content: center;
+    height: 2.75rem;
+    min-width: 2.75rem;
+    padding: 0 .95rem;
+    border-radius: 999px;
+    color: var(--color-dark-varient);
+    font-weight: 500;
+    font-size: .95rem;
+    transition: background 150ms ease, color 150ms ease;
 }
-header .navbar a:hover { padding-top: 1.5rem; }
-header .navbar a.active { background: var(--color-light); color: var(--color-primary); }
-header .navbar a.active::before {
-    content: "";
-    background: var(--color-primary);
-    position: absolute;
-    height: 5px; width: 100%;
-    left: 0; top: 0;
-}
-header .navbar a span, header .navbar a h3 { color: inherit; }
+header .navbar a:hover { background: var(--color-light); color: var(--color-dark); }
+header .navbar a.active { background: var(--color-primary); color: var(--on-primary); font-weight: 600; }
 
-/* ── THEME TOGGLER ── */
+/* ── BOTÃO DE TEMA ── */
 header .theme-toggler {
-    background: var(--color-light);
     display: flex;
     align-items: center;
-    height: 1.6rem;
-    width: 4.2rem;
+    height: 2.5rem;
+    width: 5rem;
+    padding: 3px;
     cursor: pointer;
-    border-radius: var(--border-radius-1);
-    margin-left: 2rem;
+    border: 1px solid var(--cor-borda);
+    background: var(--color-white);
+    border-radius: 999px;
 }
-header .theme-toggler span {
-    font-size: 1.2rem;
+header .theme-toggler .icone-tema {
     width: 50%; height: 100%;
     display: flex; align-items: center; justify-content: center;
+    border-radius: 999px;
+    color: var(--color-dark-varient);
 }
-header .theme-toggler span.active {
+/* o lado que está em uso fica destacado */
+header .theme-toggler[aria-pressed="false"] .icone-tema:first-child,
+header .theme-toggler[aria-pressed="true"] .icone-tema:last-child {
     background: var(--color-primary);
-    color: white;
-    border-radius: var(--border-radius-1);
+    color: var(--on-primary);
 }

@@ -1,112 +1,167 @@
 // ── DADOS SIMULADOS ──
-// Centraliza toda a simulação de leituras do ambiente da sala de aula.
+// Centraliza toda a simulação de leituras do ambiente.
 // Quando o ESP32 estiver pronto, basta substituir a função gerarNovaLeitura()
-// por uma leitura real (ex: via fetch numa API/MQTT), mantendo o resto do
-// dashboard funcionando sem alterações.
+// por uma leitura real (ex.: fetch numa API ou MQTT). O restante do painel
+// (cards, gráficos, tabelas, alertas) continua funcionando sem alterações.
 
 const CONFIG_SIMULACAO = {
-    intervaloNovaLeituraMs: 4000,  // gera uma nova leitura a cada 4s
-    intervaloRelogioMs: 1000,      // atualiza data/hora a cada 1s
-    maxHistorico: 18               // pontos mantidos no histórico/gráficos
+    intervaloNovaLeituraMs: 4000,      // intervalo de atualização das leituras (RNF04)
+    toleranciaDesatualizadoMs: 12000,  // sem leitura nova por este tempo = "desatualizado" (RF11)
+    maxHistorico: 18                   // pontos mantidos no histórico/gráficos
 }
 
-const LIMITES = {
-    temperatura: { atencaoBaixa: 19, atencaoAlta: 27, criticaBaixa: 16, criticaAlta: 30 },
-    ruido:       { atencao: 55, critico: 65 },
-    iluminacao:  { atencao: 350, critico: 150 },
-    indiceAr:    { boa: 35, moderada: 65 } // acima de 65 = Atenção
+// Cada grandeza tem limites de ATENÇÃO (nível 1) e ATENÇÃO ELEVADA (nível 2).
+// "Min" = valor baixo demais; "Max" = valor alto demais.
+// Os limites são valores iniciais de exemplo e devem ser validados na implementação (ver documento).
+const METRICAS = {
+    temperatura: {
+        rotulo: "Temperatura", icone: "thermometer", sensor: "DHT22",
+        unidade: "°C", casas: 1, eixoMin: 15, eixoMax: 33,
+        passo: 0.3, simMin: 16, simMax: 32,
+        limites: { atencaoMin: 19, atencaoMax: 27, elevadaMin: 16, elevadaMax: 30 },
+        faixa: "Confortável: 19 a 27 °C",
+        textoLimites: "Confortável de 19 a 27 °C. Atenção fora dessa faixa; atenção elevada abaixo de 16 ou acima de 30 °C."
+    },
+    umidade: {
+        rotulo: "Umidade", icone: "droplet", sensor: "DHT22",
+        unidade: "%", casas: 0, eixoMin: 10, eixoMax: 90,
+        passo: 1.2, simMin: 15, simMax: 85,
+        limites: { atencaoMin: 30, atencaoMax: 65, elevadaMin: 20, elevadaMax: 75 },
+        faixa: "Confortável: 30 a 65 %",
+        textoLimites: "Confortável de 30 a 65 %. Atenção fora dessa faixa; atenção elevada abaixo de 20 ou acima de 75 %."
+    },
+    ar: {
+        rotulo: "Qualidade do ar", icone: "wind", sensor: "MQ-135",
+        unidade: "", casas: 0, eixoMin: 0, eixoMax: 100,
+        passo: 6, simMin: 0, simMax: 100,
+        categorias: ["Boa", "Moderada", "Ruim"],
+        limites: { atencaoMax: 35, elevadaMax: 65 },
+        faixa: "Boa: índice até 35",
+        textoLimites: "Índice de 0 a 100 (indicativo). Boa até 35; moderada de 36 a 65; ruim acima de 65."
+    },
+    luminosidade: {
+        rotulo: "Luminosidade", icone: "sun", sensor: "BH1750",
+        unidade: "lux", casas: 0, eixoMin: 0, eixoMax: 1200,
+        passo: 25, simMin: 40, simMax: 1100,
+        limites: { atencaoMin: 100, atencaoMax: 700, elevadaMin: 50, elevadaMax: 1000 },
+        faixa: "Confortável: 100 a 700 lux",
+        textoLimites: "Confortável de 100 a 700 lux. Atenção acima de 700 ou abaixo de 100; atenção elevada acima de 1000 ou abaixo de 50 lux."
+    },
+    som: {
+        rotulo: "Nível de som", icone: "sound", sensor: "KY-038",
+        unidade: "", casas: 0, eixoMin: 0, eixoMax: 100,
+        passo: 4, simMin: 15, simMax: 95,
+        categorias: ["Baixo", "Elevado", "Muito alto"],
+        limites: { atencaoMax: 55, elevadaMax: 70 },
+        faixa: "Baixo: índice até 55",
+        textoLimites: "Índice de 0 a 100 (indicativo). Atenção acima de 55; atenção elevada acima de 70."
+    }
 }
 
-const CATEGORIAS_QUALIDADE_AR = [
-    { nome: "Boa",      cor: "var(--color-success)" },
-    { nome: "Moderada", cor: "var(--color-warning)" },
-    { nome: "Atenção",  cor: "var(--color-danger)"  }
+const ORDEM_METRICAS = ["temperatura", "umidade", "ar", "luminosidade", "som"]
+
+const COMPONENTES_PREVISTOS = [
+    { grandeza: "Processamento",         modelo: "ESP32 DevKit" },
+    { grandeza: "Temperatura e umidade", modelo: "DHT22" },
+    { grandeza: "Qualidade do ar",       modelo: "MQ-135" },
+    { grandeza: "Nível de som",          modelo: "KY-038" },
+    { grandeza: "Luminosidade",          modelo: "BH1750" },
+    { grandeza: "Exibição local",        modelo: "Display LCD/OLED" }
 ]
 
-const SENSORES_PLANEJADOS = [
-    { grandeza: "Temperatura",     modelo: "DHT22" },
-    { grandeza: "Iluminação",      modelo: "LDR / BH1750" },
-    { grandeza: "Ruído",           modelo: "Módulo de Som (KY-038)" },
-    { grandeza: "Qualidade do Ar", modelo: "MQ-135" }
-]
+// valores iniciais (parecidos com o exemplo do documento)
+const ESTADO_INICIAL = { temperatura: 24.5, umidade: 55, ar: 22, luminosidade: 300, som: 40 }
+const estadoSimulado = { ...ESTADO_INICIAL }
 
-// estado atual (ponto de partida da simulação)
-const estadoSimulado = {
-    temperatura: 24.5,
-    iluminacao: 620,
-    ruido: 47,
-    indiceAr: 22
+// condições que a demonstração pode ligar/desligar
+const conexao = {
+    ativa: true,        // false = simula perda de conexão (não chegam leituras novas)
+    pausado: false,     // true = a pessoa pausou a atualização
+    falhaSom: false     // true = sensor de som sem leitura
 }
 
 let historicoLeituras = []
-let alertasGerados = []
-let alertasAtivos = {} // controla quais condições já geraram alerta (evita spam)
+let alertasGerados = []   // { id, metrica, chave, mensagem, nivel, inicio, fim, ativo }
+let alertaAtivoPorMetrica = {}
+let proximoIdAlerta = 1
 
+// ── CLASSIFICAÇÃO ──
+function classificar(chave, valor) {
+    if (valor === null || valor === undefined) return { nivel: null, direcao: null }
+    const l = METRICAS[chave].limites
+    // atenção = FORA da faixa confortável; atenção elevada = ainda mais fora
+    if (l.elevadaMin != null && valor < l.elevadaMin) return { nivel: 2, direcao: "baixa" }
+    if (l.elevadaMax != null && valor > l.elevadaMax) return { nivel: 2, direcao: "alta" }
+    if (l.atencaoMin != null && valor < l.atencaoMin) return { nivel: 1, direcao: "baixa" }
+    if (l.atencaoMax != null && valor > l.atencaoMax) return { nivel: 1, direcao: "alta" }
+    return { nivel: 0, direcao: null }
+}
+
+function nivelDe(leitura, chave) {
+    return classificar(chave, leitura[chave]).nivel
+}
+
+// texto do valor como aparece nas telas
+function formatarValor(chave, valor) {
+    if (valor === null || valor === undefined) return "Leitura indisponível"
+    const m = METRICAS[chave]
+    if (m.categorias) return m.categorias[classificar(chave, valor).nivel]
+    const numero = m.casas > 0 ? formatarNumero(valor, m.casas) : String(valor)
+    return m.unidade ? `${numero} ${m.unidade}` : numero
+}
+
+// ── SIMULAÇÃO ──
 function variarValor(valor, minimo, maximo, passoMaximo) {
     const novo = valor + (Math.random() * 2 - 1) * passoMaximo
     return Math.min(maximo, Math.max(minimo, novo))
 }
 
-function classificarQualidadeAr(indice) {
-    if (indice <= LIMITES.indiceAr.boa) return 0
-    if (indice <= LIMITES.indiceAr.moderada) return 1
-    return 2
+function criarLeitura(dataHora, valores) {
+    const leitura = { dataHora }
+    ORDEM_METRICAS.forEach(chave => {
+        const v = valores[chave]
+        leitura[chave] = (v === null || v === undefined) ? null : Number(v.toFixed(METRICAS[chave].casas || 0))
+    })
+    return leitura
 }
 
-function criarLeitura(dataHora, temperatura, iluminacao, ruido, indiceAr) {
-    return {
-        dataHora,
-        temperatura: Number(temperatura.toFixed(1)),
-        iluminacao: Math.round(iluminacao),
-        ruido: Math.round(ruido),
-        indiceAr: Math.round(indiceAr),
-        qualidadeArIndex: classificarQualidadeAr(indiceAr)
-    }
-}
-
-// popula um pequeno histórico inicial para o dashboard não começar vazio
+// pequeno histórico inicial para o painel não começar vazio
 function inicializarHistoricoBase() {
     const agora = new Date()
-    const pontosBase = [
-        { minutosAtras: 6, temperatura: 23.8, iluminacao: 580, ruido: 42, indiceAr: 15 },
-        { minutosAtras: 5, temperatura: 23.9, iluminacao: 595, ruido: 44, indiceAr: 18 },
-        { minutosAtras: 4, temperatura: 24.1, iluminacao: 610, ruido: 48, indiceAr: 20 },
-        { minutosAtras: 3, temperatura: 24.3, iluminacao: 640, ruido: 53, indiceAr: 42 },
-        { minutosAtras: 2, temperatura: 24.4, iluminacao: 630, ruido: 50, indiceAr: 30 },
-        { minutosAtras: 1, temperatura: 24.5, iluminacao: 620, ruido: 47, indiceAr: 22 }
+    const base = [
+        { t: 5, temperatura: 23.8, umidade: 52, ar: 15, luminosidade: 280, som: 32 },
+        { t: 4, temperatura: 23.9, umidade: 53, ar: 18, luminosidade: 290, som: 35 },
+        { t: 3, temperatura: 24.1, umidade: 54, ar: 20, luminosidade: 310, som: 38 },
+        { t: 2, temperatura: 24.3, umidade: 56, ar: 42, luminosidade: 330, som: 46 },
+        { t: 1, temperatura: 24.4, umidade: 55, ar: 30, luminosidade: 315, som: 42 },
+        { t: 0, temperatura: 24.5, umidade: 55, ar: 22, luminosidade: 300, som: 40 }
     ]
 
-    historicoLeituras = pontosBase.map(ponto => {
-        const dataHora = new Date(agora.getTime() - ponto.minutosAtras * 60000)
-        return criarLeitura(dataHora, ponto.temperatura, ponto.iluminacao, ponto.ruido, ponto.indiceAr)
+    historicoLeituras = base.map(p => {
+        const dataHora = new Date(agora.getTime() - p.t * 60000)
+        return criarLeitura(dataHora, p)
     })
-
-    estadoSimulado.temperatura = pontosBase.at(-1).temperatura
-    estadoSimulado.iluminacao  = pontosBase.at(-1).iluminacao
-    estadoSimulado.ruido       = pontosBase.at(-1).ruido
-    estadoSimulado.indiceAr    = pontosBase.at(-1).indiceAr
+    Object.assign(estadoSimulado, ESTADO_INICIAL)
 }
 
 // gera a próxima leitura simulada com pequenas variações (não totalmente aleatórias)
 function gerarNovaLeitura() {
-    estadoSimulado.temperatura = variarValor(estadoSimulado.temperatura, 17, 31, 0.3)
-    estadoSimulado.iluminacao  = variarValor(estadoSimulado.iluminacao, 80, 900, 20)
-    estadoSimulado.ruido       = variarValor(estadoSimulado.ruido, 28, 72, 3)
-    estadoSimulado.indiceAr    = variarValor(estadoSimulado.indiceAr, 0, 100, 6)
+    ORDEM_METRICAS.forEach(chave => {
+        const m = METRICAS[chave]
+        estadoSimulado[chave] = variarValor(estadoSimulado[chave], m.simMin, m.simMax, m.passo)
+    })
 
-    const leitura = criarLeitura(
-        new Date(),
-        estadoSimulado.temperatura,
-        estadoSimulado.iluminacao,
-        estadoSimulado.ruido,
-        estadoSimulado.indiceAr
-    )
+    const valores = { ...estadoSimulado }
+    if (conexao.falhaSom) valores.som = null   // sensor sem leitura
 
+    return registrarLeitura(criarLeitura(new Date(), valores))
+}
+
+// guarda uma leitura (simulada ou vinda do ESP32) no histórico e confere os alertas
+function registrarLeitura(leitura) {
     historicoLeituras.push(leitura)
     if (historicoLeituras.length > CONFIG_SIMULACAO.maxHistorico) historicoLeituras.shift()
-
     atualizarAlertas(leitura)
-
     return leitura
 }
 
@@ -114,50 +169,99 @@ function obterUltimaLeitura() {
     return historicoLeituras.at(-1)
 }
 
-// calcula o status geral do ambiente a partir da última leitura
-function calcularStatusGeral(leitura) {
-    if (!leitura) return { nivel: "normal", emoji: "🟢", texto: "Ambiente normal" }
-
-    const critico =
-        leitura.temperatura <= LIMITES.temperatura.criticaBaixa ||
-        leitura.temperatura >= LIMITES.temperatura.criticaAlta ||
-        leitura.ruido >= LIMITES.ruido.critico ||
-        leitura.iluminacao <= LIMITES.iluminacao.critico ||
-        leitura.qualidadeArIndex === 2
-
-    if (critico) return { nivel: "critico", emoji: "🔴", texto: "Condição crítica" }
-
-    const atencao =
-        leitura.temperatura <= LIMITES.temperatura.atencaoBaixa ||
-        leitura.temperatura >= LIMITES.temperatura.atencaoAlta ||
-        leitura.ruido >= LIMITES.ruido.atencao ||
-        leitura.iluminacao <= LIMITES.iluminacao.atencao ||
-        leitura.qualidadeArIndex === 1
-
-    if (atencao) return { nivel: "atencao", emoji: "🟡", texto: "Atenção" }
-
-    return { nivel: "normal", emoji: "🟢", texto: "Ambiente normal" }
+// ── ESTADO DO SISTEMA (RF11, RNF07, RI05, RI06) ──
+function leituraDesatualizada() {
+    if (conexao.pausado) return false
+    const ultima = obterUltimaLeitura()
+    return !ultima || (Date.now() - ultima.dataHora.getTime()) > CONFIG_SIMULACAO.toleranciaDesatualizadoMs
 }
 
-// gera alertas apenas quando uma condição É ATIVADA (evita repetir a cada leitura)
-function atualizarAlertas(leitura) {
-    const condicoes = [
-        { chave: "ruidoCritico",  ativo: leitura.ruido >= LIMITES.ruido.critico,          mensagem: `Ruído acima do nível configurado (${leitura.ruido} dB)`, status: "critico" },
-        { chave: "ruidoAtencao",  ativo: leitura.ruido >= LIMITES.ruido.atencao && leitura.ruido < LIMITES.ruido.critico, mensagem: `Ruído elevado (${leitura.ruido} dB)`, status: "atencao" },
-        { chave: "tempAlta",      ativo: leitura.temperatura >= LIMITES.temperatura.atencaoAlta, mensagem: `Temperatura elevada (${String(leitura.temperatura).replace(".", ",")} °C)`, status: leitura.temperatura >= LIMITES.temperatura.criticaAlta ? "critico" : "atencao" },
-        { chave: "tempBaixa",     ativo: leitura.temperatura <= LIMITES.temperatura.atencaoBaixa, mensagem: `Temperatura baixa (${String(leitura.temperatura).replace(".", ",")} °C)`, status: leitura.temperatura <= LIMITES.temperatura.criticaBaixa ? "critico" : "atencao" },
-        { chave: "arAtencao",     ativo: leitura.qualidadeArIndex >= 1, mensagem: `Qualidade do ar em ${CATEGORIAS_QUALIDADE_AR[leitura.qualidadeArIndex].nome.toLowerCase()}`, status: leitura.qualidadeArIndex === 2 ? "critico" : "atencao" },
-        { chave: "iluminacaoBaixa", ativo: leitura.iluminacao <= LIMITES.iluminacao.atencao, mensagem: `Iluminação abaixo do nível esperado (${leitura.iluminacao} lux)`, status: leitura.iluminacao <= LIMITES.iluminacao.critico ? "critico" : "atencao" }
-    ]
+function sensoresSemLeitura(leitura) {
+    return ORDEM_METRICAS.filter(chave => leitura[chave] === null)
+}
 
-    condicoes.forEach(condicao => {
-        const jaEstavaAtivo = alertasAtivos[condicao.chave]
-        if (condicao.ativo && !jaEstavaAtivo) {
-            alertasGerados.unshift({ mensagem: condicao.mensagem, dataHora: leitura.dataHora, status: condicao.status })
+function obterEstadoSistema() {
+    const ultima = obterUltimaLeitura()
+    const hora = formatarHora(ultima.dataHora, true)
+    const semLeitura = sensoresSemLeitura(ultima)
+
+    if (conexao.pausado) {
+        return { codigo: "pausado", nivel: 1, texto: "Atualização pausada", detalhe: `Última leitura às ${hora}` }
+    }
+    if (leituraDesatualizada()) {
+        return { codigo: "desatualizado", nivel: "velho", texto: "Dados desatualizados", detalhe: (typeof fonteDados !== "undefined" && fonteDados.modo === "esp32" ? `O ESP32 não respondeu. Última leitura às ${hora}` : `Sem nova leitura desde ${hora}`) }
+    }
+    if (semLeitura.length > 0) {
+        const nomes = semLeitura.map(c => METRICAS[c].rotulo.toLowerCase()).join(", ")
+        return { codigo: "parcial", nivel: 1, texto: "Dados atualizados, com falha", detalhe: `Leitura indisponível: ${nomes}` }
+    }
+    return { codigo: "atualizado", nivel: 0, texto: "Dados atualizados", detalhe: `Última leitura às ${hora}` }
+}
+
+// ── STATUS GERAL DO AMBIENTE ──
+function calcularStatusGeral(leitura) {
+    if (leituraDesatualizada()) {
+        return { nivel: "velho", texto: "Os dados estão desatualizados", detalhe: "Não use estes valores como se fossem atuais." }
+    }
+
+    const niveis = ORDEM_METRICAS.map(c => ({ chave: c, nivel: nivelDe(leitura, c) }))
+    const disponiveis = niveis.filter(n => n.nivel !== null)
+    const maximo = disponiveis.length ? Math.max(...disponiveis.map(n => n.nivel)) : null
+    const fora = disponiveis.filter(n => n.nivel > 0).map(n => METRICAS[n.chave].rotulo.toLowerCase())
+    const semLeitura = niveis.filter(n => n.nivel === null).length
+    const aviso = semLeitura ? ` ${semLeitura} leitura(s) indisponível(is).` : ""
+
+    const nomesSem = niveis.filter(n => n.nivel === null).map(n => METRICAS[n.chave].rotulo.toLowerCase()).join(", ")
+
+    if (maximo === null) return { nivel: "sem", texto: "Sem leituras disponíveis", detalhe: "Verifique os sensores." }
+    // se falta um sensor, não dá para dizer que está tudo bem
+    if (maximo === 0 && semLeitura > 0) return { nivel: 1, texto: "Dados incompletos", detalhe: `Os indicadores com leitura estão dentro dos limites. Sem leitura: ${nomesSem}.` }
+    if (maximo === 0) return { nivel: 0, texto: "A sala está dentro dos limites", detalhe: "Nenhum indicador precisa de atenção." }
+    if (maximo === 1) return { nivel: 1, texto: "Atenção: há indicadores fora do limite", detalhe: `Fora da faixa: ${fora.join(", ")}.` + aviso }
+    return { nivel: 2, texto: "Atenção elevada: indicadores bem fora do limite", detalhe: `Fora da faixa: ${fora.join(", ")}.` + aviso }
+}
+
+// ── ALERTAS ──
+function mensagemAlerta(chave, direcao, nivel, valor) {
+    const m = METRICAS[chave]
+    if (m.categorias) return `${m.rotulo}: ${m.categorias[nivel].toLowerCase()} (índice ${valor})`
+    return `${m.rotulo} ${direcao} (${formatarValor(chave, valor)})`
+}
+
+// cria um alerta quando a condição começa e o encerra quando ela termina
+// (evita repetir o mesmo alerta a cada leitura)
+function atualizarAlertas(leitura) {
+    ORDEM_METRICAS.forEach(chave => {
+        const valor = leitura[chave]
+        if (valor === null) return  // sem leitura: não muda o alerta
+
+        const { nivel, direcao } = classificar(chave, valor)
+        const novaChave = nivel > 0 ? `${direcao}-${nivel}` : null
+        const atual = alertaAtivoPorMetrica[chave]
+
+        if (atual && atual.chave === novaChave) return
+
+        if (atual) {
+            atual.ativo = false
+            atual.fim = leitura.dataHora
+            alertaAtivoPorMetrica[chave] = null
+        }
+
+        if (novaChave) {
+            const alerta = {
+                id: proximoIdAlerta++, metrica: chave, chave: novaChave,
+                mensagem: mensagemAlerta(chave, direcao, nivel, valor),
+                nivel, inicio: leitura.dataHora, fim: null, ativo: true
+            }
+            alertasGerados.unshift(alerta)
+            alertaAtivoPorMetrica[chave] = alerta
             if (alertasGerados.length > 12) alertasGerados.pop()
         }
-        alertasAtivos[condicao.chave] = condicao.ativo
     })
+}
+
+function contarAlertasAtivos() {
+    return alertasGerados.filter(a => a.ativo).length
 }
 
 inicializarHistoricoBase()

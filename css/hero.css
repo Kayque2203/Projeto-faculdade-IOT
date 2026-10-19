@@ -1,0 +1,73 @@
+/* ── HERO: a situação da sala em uma frase ── */
+.hero {
+    --hero-cor: var(--color-dark-varient);
+    --hero-a: var(--fundo-neutro);
+    --hero-b: var(--color-white);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1.5rem 2rem;
+    align-items: center;
+    padding: 1.9rem 2.1rem;
+    border-radius: var(--raio-grande);
+    border: 1px solid var(--cor-borda);
+    background: linear-gradient(135deg, var(--hero-a), var(--hero-b) 75%);
+    box-shadow: var(--sombra-forte);
+}
+.hero.nivel-0 { --hero-cor: var(--color-success); --hero-a: var(--fundo-success); }
+.hero.nivel-1 { --hero-cor: var(--color-warning); --hero-a: var(--fundo-warning); }
+.hero.nivel-2 { --hero-cor: var(--color-danger);  --hero-a: var(--fundo-danger); }
+
+.hero-principal { display: flex; align-items: center; gap: 1.4rem; min-width: 0; }
+.hero-simbolo {
+    display: grid; place-items: center;
+    flex-shrink: 0;
+    width: 5rem; height: 5rem;
+    border-radius: 50%;
+    background: var(--color-white);
+    border: 3px solid var(--hero-cor);
+    color: var(--hero-cor);
+}
+.hero-simbolo .icone { width: 2.5rem; height: 2.5rem; }
+
+.hero-sala {
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--color-dark-varient);
+}
+.hero-titulo { font-size: 1.9rem; font-weight: 800; line-height: 1.2; letter-spacing: -.02em; margin: .15rem 0 .3rem; }
+.hero-detalhe { color: var(--color-dark-varient); font-size: 1.05rem; }
+
+.hero-lateral { display: flex; flex-direction: column; align-items: flex-end; gap: .9rem; text-align: right; }
+.hero-hora { display: flex; flex-direction: column; }
+.hero-hora-valor { font-size: 2.1rem; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.hero-hora-rotulo { font-size: .85rem; color: var(--color-dark-varient); }
+.hero-chips { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; }
+
+.chip-fonte {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .2rem .7rem;
+    border-radius: 999px;
+    border: 1px solid var(--cor-borda);
+    background: var(--color-white);
+    color: var(--color-dark-varient);
+    font-size: .875rem; font-weight: 600; line-height: 1.4;
+}
+
+/* ── ALERTAS ATIVOS (logo abaixo do hero) ── */
+.alertas-ativos {
+    margin-top: 1.2rem;
+    padding: 1.1rem 1.4rem;
+    border-radius: var(--card-border-radius);
+    border: 1px solid var(--cor-borda);
+    background: var(--color-white);
+    box-shadow: var(--box-shadow);
+}
+.alertas-ativos[hidden] { display: none; }
+.alertas-ativos .titulo-secao { font-size: 1.05rem; margin-bottom: .7rem; }
+.alertas-ativos ul { display: grid; gap: .55rem; }
+.alertas-ativos li { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .8rem; }
+.alertas-ativos li small { color: var(--color-info); margin-left: auto; }
+
+#agora .titulo-secao:not(.alertas-ativos .titulo-secao) { margin-top: 2.4rem; }
